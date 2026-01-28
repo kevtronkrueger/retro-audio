@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Package Name:** `retro-audio-engine`  
+**Package Name:** `retro-audio`  
 **Version:** 1.0.0  
 **Purpose:** A lightweight, embeddable Web Audio synthesizer engine that emulates 8-bit sound hardware (Game Boy DMG style). Consumes JSON sound definitions and plays them in any web application.
 
@@ -19,7 +19,7 @@
 ## Architecture
 
 ```
-retro-audio-engine/
+retro-audio/
 ├── src/
 │   ├── index.ts                 # Public API exports
 │   ├── RetroAudio.ts            # Main class - orchestrates everything
@@ -1731,7 +1731,7 @@ export function frequencyToNote(frequency: number): string {
 
 ```json
 {
-  "name": "retro-audio-engine",
+  "name": "retro-audio",
   "version": "1.0.0",
   "description": "Embeddable 8-bit audio synthesis engine",
   "main": "dist/index.cjs",
@@ -1991,7 +1991,7 @@ export class VoiceLimitReachedError extends RetroAudioError {
 ### Basic Usage (Consuming Application)
 
 ```typescript
-import { RetroAudio } from 'retro-audio-engine';
+import { RetroAudio } from 'retro-audio';
 
 // Initialize on button click
 document.querySelector('#start-button').addEventListener('click', async () => {
@@ -2009,7 +2009,7 @@ document.querySelector('#start-button').addEventListener('click', async () => {
 ### Playing a Song
 
 ```typescript
-import { RetroAudio } from 'retro-audio-engine';
+import { RetroAudio } from 'retro-audio';
 
 const audio = new RetroAudio();
 await audio.init();
@@ -2036,7 +2036,7 @@ document.querySelector('#stop').onclick = () => player.stop();
 ### Real-Time Synth (Composition Tool)
 
 ```typescript
-import { RetroAudio } from 'retro-audio-engine';
+import { RetroAudio } from 'retro-audio';
 
 const audio = new RetroAudio();
 await audio.init();

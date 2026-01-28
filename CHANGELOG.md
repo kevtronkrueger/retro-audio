@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of Retro Audio Engine
+- Initial release of Retro Audio
 - **Core Audio System**
   - Web Audio API-based audio engine with state management
   - Support for mobile audio interruptions and browser autoplay policies
@@ -64,4 +64,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript strict mode
 - Browser support: Chrome 66+, Firefox 76+, Safari 14.1+, Edge 79+
 
-[1.0.0]: https://github.com/username/retro-audio-engine/releases/tag/v1.0.0
+[1.0.0]: https://github.com/kevtronkrueger/retro-audio/releases/tag/v1.0.0

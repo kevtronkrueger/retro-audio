@@ -16,19 +16,19 @@ A lightweight, embeddable Web Audio synthesizer engine that emulates 8-bit sound
 ## Installation
 
 ```bash
-npm install retro-audio-engine
+npm install retro-audio
 ```
 
 Or use directly in a browser:
 
 ```html
-<script src="https://unpkg.com/retro-audio-engine/dist/index.min.js"></script>
+<script src="https://unpkg.com/retro-audio/dist/index.min.js"></script>
 ```
 
 ## Quick Start
 
 ```typescript
-import { RetroAudio } from 'retro-audio-engine';
+import { RetroAudio } from 'retro-audio';
 
 // Create instance
 const audio = new RetroAudio();

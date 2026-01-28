@@ -1,5 +1,5 @@
 {
-  "name": "retro-audio-engine",
+  "name": "retro-audio",
   "version": "1.0.0",
   "type": "module",
   "description": "Lightweight, embeddable Web Audio synthesizer engine that emulates 8-bit sound hardware (Game Boy DMG style)",

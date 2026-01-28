@@ -1,4 +1,4 @@
-# Retro Audio Engine
+# Retro Audio
 
 Lightweight Web Audio synthesizer emulating 8-bit Game Boy DMG sound hardware. Consumes JSON sound definitions for playback in web apps.
 
@@ -33,7 +33,7 @@ src/
 ## Key Files
 
 - @README.md - Full API documentation
-- @retro-audio-engine-spec.md - Original design specification
+- @retro-audio-spec.md - Original design specification
 - @docs/BUG-REPORT.md - Known issues being investigated
 
 ## Conventions

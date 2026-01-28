@@ -1,6 +1,6 @@
-# Contributing to Retro Audio Engine
+# Contributing to Retro Audio
 
-Thank you for your interest in contributing to Retro Audio Engine! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Retro Audio! This document provides guidelines and information for contributors.
 
 ## Development Setup
 
@@ -14,8 +14,8 @@ Thank you for your interest in contributing to Retro Audio Engine! This document
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/retro-audio-engine.git
-   cd retro-audio-engine
+   git clone https://github.com/YOUR_USERNAME/retro-audio.git
+   cd retro-audio
    ```
 3. Install dependencies:
    ```bash
