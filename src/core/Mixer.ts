@@ -15,6 +15,7 @@ export interface MixerChannel {
 export class Mixer {
   private context: AudioContext;
   private channels: Map<ChannelType, MixerChannel> = new Map();
+  private channelVolumes: Map<ChannelType, number> = new Map();
   private soloActive: boolean = false;
 
   constructor(context: AudioContext, destination: AudioNode) {
@@ -31,6 +32,8 @@ export class Mixer {
         muted: false,
         solo: false,
       });
+      // Store default volume
+      this.channelVolumes.set(type, 1);
     }
   }
 
@@ -52,7 +55,12 @@ export class Mixer {
     const ch = this.channels.get(channel);
     if (ch) {
       const clampedVolume = Math.max(0, Math.min(1, volume));
-      ch.gain.gain.setValueAtTime(clampedVolume, this.context.currentTime);
+      // Store the intended volume for restoration after mute/unmute
+      this.channelVolumes.set(channel, clampedVolume);
+      // Only apply if channel is currently audible
+      if (this.isChannelAudible(channel)) {
+        ch.gain.gain.setValueAtTime(clampedVolume, this.context.currentTime);
+      }
     }
   }
 
@@ -60,8 +68,8 @@ export class Mixer {
    * Get the volume for a channel
    */
   getChannelVolume(channel: ChannelType): number {
-    const ch = this.channels.get(channel);
-    return ch?.gain.gain.value ?? 0;
+    // Return the intended volume, not the current gain (which may be 0 if muted)
+    return this.channelVolumes.get(channel) ?? 1;
   }
 
   /**
@@ -114,16 +122,10 @@ export class Mixer {
   private updateChannelAudibility(): void {
     for (const [type, ch] of this.channels) {
       const audible = this.isChannelAudible(type);
-      // Use gain value to mute/unmute (0 = muted)
-      // We store the actual intended volume separately in the gain node
-      // This is a simplified approach - in production you'd want separate volume/mute gains
-      if (!audible) {
-        ch.gain.gain.setValueAtTime(0, this.context.currentTime);
-      } else {
-        // Restore to default - in a more complete implementation,
-        // we'd store and restore the intended volume
-        ch.gain.gain.setValueAtTime(1, this.context.currentTime);
-      }
+      const volume = this.channelVolumes.get(type) ?? 1;
+      // Set gain to 0 if muted, otherwise restore stored volume
+      const targetGain = audible ? volume : 0;
+      ch.gain.gain.setValueAtTime(targetGain, this.context.currentTime);
     }
   }
 
@@ -177,10 +179,11 @@ export class Mixer {
    * Reset all channels to default state
    */
   reset(): void {
-    for (const ch of this.channels.values()) {
+    for (const [type, ch] of this.channels) {
       ch.muted = false;
       ch.solo = false;
       ch.gain.gain.setValueAtTime(1, this.context.currentTime);
+      this.channelVolumes.set(type, 1);
     }
     this.soloActive = false;
   }

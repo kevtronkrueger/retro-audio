@@ -157,7 +157,7 @@ export class Validator {
   private validatePitchConfig(pitch: unknown): string[] {
     const errors: string[] = [];
 
-    if (typeof pitch !== 'object') {
+    if (pitch === null || typeof pitch !== 'object') {
       errors.push('Pitch config must be an object');
       return errors;
     }

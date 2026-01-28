@@ -12,6 +12,7 @@ import { WAVETABLE_SIZE, WAVETABLE_MAX_VALUE } from '../utils/constants';
 export class WaveChannel implements Channel {
   private context: AudioContext;
   private _oscillator: OscillatorNode | null = null;
+  private _oscillatorStopped: boolean = false;
   private gainNode: GainNode;
   private waveformConfig: WaveWaveformConfig = { type: 'triangle' };
   private wavetable: number[] = new Array(WAVETABLE_SIZE).fill(8); // Default mid-level
@@ -80,16 +81,13 @@ export class WaveChannel implements Channel {
   }
 
   noteOn(frequency: number, time: number): void {
-    // Stop any existing oscillator
-    if (this._oscillator) {
-      try {
-        this._oscillator.stop(time);
-      } catch {
-        // Oscillator may already be stopped
-      }
+    // Stop any existing oscillator (only if not already stopped)
+    if (this._oscillator && !this._oscillatorStopped) {
+      this._oscillator.stop(time);
     }
 
     this._oscillator = this.context.createOscillator();
+    this._oscillatorStopped = false;
     this._oscillator.frequency.value = frequency;
 
     // Use native types for triangle/sawtooth, custom wavetable otherwise
@@ -110,13 +108,9 @@ export class WaveChannel implements Channel {
   }
 
   noteOff(time: number): void {
-    if (this._oscillator) {
-      try {
-        this._oscillator.stop(time);
-      } catch {
-        // Oscillator may already be stopped
-      }
-      this._oscillator = null;
+    if (this._oscillator && !this._oscillatorStopped) {
+      this._oscillator.stop(time);
+      this._oscillatorStopped = true;
     }
   }
 
@@ -139,12 +133,11 @@ export class WaveChannel implements Channel {
    */
   dispose(): void {
     if (this._oscillator) {
-      try {
+      if (!this._oscillatorStopped) {
         this._oscillator.stop();
-        this._oscillator.disconnect();
-      } catch {
-        // Ignore errors
+        this._oscillatorStopped = true;
       }
+      this._oscillator.disconnect();
       this._oscillator = null;
     }
     this.gainNode.disconnect();

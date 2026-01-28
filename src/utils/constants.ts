@@ -23,11 +23,18 @@ export const MAX_BPM = 300;
 /** Default steps per beat (16th notes) */
 export const DEFAULT_STEPS_PER_BEAT = 4;
 
-/** Schedule ahead time in seconds for precise timing */
-export const SCHEDULE_AHEAD_TIME = 0.1;
+/**
+ * Schedule ahead time in seconds for precise timing.
+ * Set to >1 second to handle browser background tab throttling,
+ * where setTimeout is throttled to 1 second intervals.
+ */
+export const SCHEDULE_AHEAD_TIME = 1.1;
 
-/** Timer interval in ms for scheduler checks */
-export const SCHEDULER_INTERVAL = 25;
+/**
+ * Timer interval in ms for scheduler checks.
+ * This is the desired interval; browsers may throttle in background tabs.
+ */
+export const SCHEDULER_INTERVAL = 100;
 
 /** Number of harmonics for pulse wave generation */
 export const PULSE_HARMONICS = 64;

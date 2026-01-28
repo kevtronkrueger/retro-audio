@@ -11,6 +11,7 @@ import { PULSE_HARMONICS } from '../utils/constants';
 export class PulseChannel implements Channel {
   private context: AudioContext;
   private _oscillator: OscillatorNode | null = null;
+  private _oscillatorStopped: boolean = false;
   private gainNode: GainNode;
   private duty: number = 0.5; // Default 50% duty = square wave
 
@@ -61,16 +62,13 @@ export class PulseChannel implements Channel {
   }
 
   noteOn(frequency: number, time: number): void {
-    // Stop any existing oscillator
-    if (this._oscillator) {
-      try {
-        this._oscillator.stop(time);
-      } catch {
-        // Oscillator may already be stopped
-      }
+    // Stop any existing oscillator (only if not already stopped)
+    if (this._oscillator && !this._oscillatorStopped) {
+      this._oscillator.stop(time);
     }
 
     this._oscillator = this.context.createOscillator();
+    this._oscillatorStopped = false;
     this._oscillator.setPeriodicWave(this.createPulseWave(this.duty));
     this._oscillator.frequency.value = frequency;
     this._oscillator.connect(this.gainNode);
@@ -78,13 +76,9 @@ export class PulseChannel implements Channel {
   }
 
   noteOff(time: number): void {
-    if (this._oscillator) {
-      try {
-        this._oscillator.stop(time);
-      } catch {
-        // Oscillator may already be stopped
-      }
-      this._oscillator = null;
+    if (this._oscillator && !this._oscillatorStopped) {
+      this._oscillator.stop(time);
+      this._oscillatorStopped = true;
     }
   }
 
@@ -107,12 +101,11 @@ export class PulseChannel implements Channel {
    */
   dispose(): void {
     if (this._oscillator) {
-      try {
+      if (!this._oscillatorStopped) {
         this._oscillator.stop();
-        this._oscillator.disconnect();
-      } catch {
-        // Ignore errors
+        this._oscillatorStopped = true;
       }
+      this._oscillator.disconnect();
       this._oscillator = null;
     }
     this.gainNode.disconnect();

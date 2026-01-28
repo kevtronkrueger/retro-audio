@@ -58,6 +58,10 @@ export function mapRange(
   outMin: number,
   outMax: number
 ): number {
+  // Guard against division by zero when input range is zero
+  if (inMin === inMax) {
+    return outMin;
+  }
   return ((value - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 }
 

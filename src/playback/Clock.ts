@@ -13,7 +13,8 @@ export class Clock {
 
   constructor(bpm: number = DEFAULT_BPM, stepsPerBeat: number = DEFAULT_STEPS_PER_BEAT) {
     this._bpm = clampBpm(bpm);
-    this._stepsPerBeat = stepsPerBeat;
+    // Ensure stepsPerBeat is at least 1 to prevent division by zero
+    this._stepsPerBeat = Math.max(1, Math.floor(stepsPerBeat));
   }
 
   /**

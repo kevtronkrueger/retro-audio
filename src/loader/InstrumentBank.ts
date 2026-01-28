@@ -112,8 +112,9 @@ export class InstrumentBank {
       return undefined;
     }
 
+    // Use structuredClone for proper deep cloning (handles all serializable values)
     const cloned: InstrumentData = {
-      ...JSON.parse(JSON.stringify(source)), // Deep clone
+      ...structuredClone(source),
       id: newId,
       name: newName ?? `${source.name} (copy)`,
     };

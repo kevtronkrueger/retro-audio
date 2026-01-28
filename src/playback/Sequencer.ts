@@ -156,7 +156,11 @@ export class Sequencer {
     this.scheduler.pause();
   }
 
-  stop(): void {
+  /**
+   * Stop playback
+   * @param fireOnEnd - Whether to fire the onEnd callback (default: false for manual stop)
+   */
+  stop(fireOnEnd: boolean = false): void {
     this._isPlaying = false;
     this._isPaused = false;
     this._currentStep = 0;
@@ -174,7 +178,10 @@ export class Sequencer {
     }
     this.scheduledNoteOffs.clear();
 
-    this.onEnd?.();
+    // Only fire onEnd for natural completion, not manual stop
+    if (fireOnEnd) {
+      this.onEnd?.();
+    }
   }
 
   seekToStep(step: number): void {
@@ -283,7 +290,8 @@ export class Sequencer {
 
       const noteOffDelay = Math.max(0, (noteOffTime - this.context.currentTime) * 1000);
       const timeout = setTimeout(() => {
-        synth.noteOff(noteOffTime);
+        // Use current time instead of captured noteOffTime to avoid stale references
+        synth.noteOff();
         if (this.activeVoices.get(channel) === synth) {
           this.activeVoices.delete(channel);
         }
@@ -331,7 +339,8 @@ export class Sequencer {
         this._currentStep = 0;
         this.onLoop?.();
       } else {
-        this.stop();
+        // Natural completion - fire onEnd callback
+        this.stop(true);
       }
     }
   }

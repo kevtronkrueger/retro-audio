@@ -80,7 +80,16 @@ export class Envelope {
     param.cancelScheduledValues(startTime);
 
     // Get current value and set it explicitly
-    const currentValue = param.value;
+    // Note: param.value may not reflect the scheduled value at startTime
+    // but this is the best we can do without complex value tracking
+    let currentValue = param.value;
+
+    // Handle zero or very small values - use linear ramp instead of exponential
+    // because exponential ramp fails with values at or near zero
+    if (currentValue <= MIN_EXPONENTIAL_VALUE) {
+      currentValue = MIN_EXPONENTIAL_VALUE;
+    }
+
     param.setValueAtTime(currentValue, startTime);
 
     // Release to zero
@@ -89,6 +98,7 @@ export class Envelope {
       param.exponentialRampToValueAtTime(MIN_EXPONENTIAL_VALUE, releaseEnd);
       param.setValueAtTime(0, releaseEnd);
     } else {
+      // Use linear ramp for zero/small values or when linear curve is configured
       param.linearRampToValueAtTime(0, releaseEnd);
     }
 

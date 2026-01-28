@@ -20,7 +20,7 @@ export function noteToFrequency(note: string): number {
   }
 
   const [, noteName, accidental, octaveStr] = match;
-  const octave = parseInt(octaveStr, 10);
+  let octave = parseInt(octaveStr, 10);
 
   // Find base note index
   let noteIndex = NOTE_NAMES.indexOf(noteName.toUpperCase());
@@ -33,8 +33,15 @@ export function noteToFrequency(note: string): number {
   else if (accidental.toLowerCase() === 'b') noteIndex--;
 
   // Handle wrap-around for enharmonic equivalents (Cb, B#)
-  if (noteIndex < 0) noteIndex += 12;
-  if (noteIndex >= 12) noteIndex -= 12;
+  // Cb4 -> B3, B#4 -> C5
+  if (noteIndex < 0) {
+    noteIndex += 12;
+    octave -= 1;
+  }
+  if (noteIndex >= 12) {
+    noteIndex -= 12;
+    octave += 1;
+  }
 
   // Calculate MIDI note number
   const midi = (octave + 1) * 12 + noteIndex;

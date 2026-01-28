@@ -87,11 +87,12 @@ export class SoundInstance {
     // The voice's release will complete on its own schedule
     this._isPlaying = false;
 
-    // Resolve finished after a reasonable time for release
-    // In a more complete implementation, we'd get the actual release time
+    // Get the actual envelope release time, capped at max of 5 seconds
+    const releaseTime = this.voice.instrument?.envelope.release ?? 0;
+    const bufferMs = (releaseTime * 1000) + 100; // Add small buffer
     setTimeout(() => {
       this.resolveFinished();
-    }, 2000); // Allow up to 2 seconds for release
+    }, Math.min(bufferMs, 5100)); // Cap at max release (5s) + buffer
   }
 
   private clearDurationTimeout(): void {

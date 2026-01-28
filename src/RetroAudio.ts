@@ -65,7 +65,10 @@ export class RetroAudio {
   async init(): Promise<void> {
     await this.audioEngine.init();
 
-    const context = this.audioEngine.context!;
+    const context = this.audioEngine.context;
+    if (!context) {
+      throw new AudioContextNotInitializedError('AudioContext failed to initialize');
+    }
 
     // Initialize mixer
     this.mixer = new Mixer(context, this.audioEngine.destination);
@@ -170,7 +173,10 @@ export class RetroAudio {
     }
 
     // Acquire a voice
-    const voice = this.voicePool!.acquire();
+    if (!this.voicePool) {
+      throw new AudioContextNotInitializedError('Voice pool not initialized');
+    }
+    const voice = this.voicePool.acquire();
     if (!voice) {
       throw new VoiceLimitReachedError();
     }
@@ -181,8 +187,12 @@ export class RetroAudio {
     voice.noteOn(frequency, 1, this.audioEngine.currentTime);
 
     // Create sound instance
+    const context = this.audioEngine.context;
+    if (!context) {
+      throw new AudioContextNotInitializedError('AudioContext not available');
+    }
     const soundInstance = new SoundInstance(
-      this.audioEngine.context!,
+      context,
       voice,
       duration
     );
@@ -205,19 +215,29 @@ export class RetroAudio {
     this.ensureInitialized();
 
     // Acquire a voice from the pool
-    const voice = this.voicePool!.acquire();
+    if (!this.voicePool) {
+      throw new AudioContextNotInitializedError('Voice pool not initialized');
+    }
+    const voice = this.voicePool.acquire();
     if (!voice) {
       throw new VoiceLimitReachedError();
     }
 
+    const context = this.audioEngine.context;
+    if (!context) {
+      throw new AudioContextNotInitializedError('AudioContext not available');
+    }
+
     // Create Synth wrapper
     const synth = new Synth(
-      this.audioEngine.context!,
+      context,
       voice,
       instrument,
       () => {
         // Cleanup callback when synth is disposed
         this.activeSynths.delete(synth);
+        // Release voice back to pool to prevent memory leak
+        this.voicePool?.release(voice);
       }
     );
 
@@ -238,8 +258,13 @@ export class RetroAudio {
       this.activePatternPlayer.dispose();
     }
 
+    const context = this.audioEngine.context;
+    if (!context) {
+      throw new AudioContextNotInitializedError('AudioContext not available');
+    }
+
     this.activePatternPlayer = new PatternPlayer(
-      this.audioEngine.context!,
+      context,
       this,
       pattern,
       options
@@ -265,8 +290,13 @@ export class RetroAudio {
     // Load song instruments
     this.loadInstruments(song.instruments);
 
+    const context = this.audioEngine.context;
+    if (!context) {
+      throw new AudioContextNotInitializedError('AudioContext not available');
+    }
+
     this.activeSongPlayer = new SongPlayer(
-      this.audioEngine.context!,
+      context,
       this,
       song
     );

@@ -79,8 +79,16 @@ export class Arpeggiator {
         break;
       case 'updown': {
         const sorted = [...safeOffsets].sort((a, b) => a - b);
-        const reversed = [...sorted].reverse().slice(1, -1); // Exclude endpoints
-        pattern = [...sorted, ...reversed];
+        if (sorted.length <= 2) {
+          // For 1-2 elements, alternate between them
+          // [0] -> [0], [0, 4] -> [0, 4, 4, 0] (or simply cycle)
+          pattern = sorted.length === 1 ? sorted : [...sorted, ...sorted.slice().reverse()];
+        } else {
+          // For 3+ elements, exclude endpoints on the way down to avoid repeats
+          // [0, 4, 7] -> [0, 4, 7, 4] (7 and 0 only appear once per cycle)
+          const reversed = [...sorted].reverse().slice(1, -1);
+          pattern = [...sorted, ...reversed];
+        }
         break;
       }
       case 'random':

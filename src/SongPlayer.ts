@@ -152,9 +152,6 @@ export class SongPlayer extends PatternPlayer {
   }
 
   private handlePatternEnd(): void {
-    // Fire step end callback
-    this.onEnd?.();
-
     const nextIndex = this._currentPatternIndex + 1;
 
     if (nextIndex < this.song.sequence.length) {
@@ -171,7 +168,8 @@ export class SongPlayer extends PatternPlayer {
       this.sequencer.play();
       this.onPatternChange?.(loopPoint, this.currentPatternId);
     } else {
-      // Song ended
+      // Song ended - only fire onEnd when the song truly ends
+      this.onEnd?.();
       this._currentPatternIndex = 0;
     }
   }

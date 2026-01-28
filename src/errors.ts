@@ -10,8 +10,8 @@ export class RetroAudioError extends Error {
 }
 
 export class AudioContextNotInitializedError extends RetroAudioError {
-  constructor() {
-    super('AudioContext not initialized. Call init() first.');
+  constructor(message?: string) {
+    super(message ?? 'AudioContext not initialized. Call init() first.');
     this.name = 'AudioContextNotInitializedError';
   }
 }

@@ -5,34 +5,102 @@
  * without requiring a browser environment.
  */
 
+/**
+ * Scheduled automation event for time-aware value changes
+ */
+interface ScheduledEvent {
+  type: 'setValueAtTime' | 'linearRampToValueAtTime' | 'exponentialRampToValueAtTime' | 'setTargetAtTime';
+  value: number;
+  time: number;
+  timeConstant?: number; // For setTargetAtTime
+}
+
 export class MockAudioParam {
-  value: number = 0;
+  private _value: number = 0;
+  private _scheduledEvents: ScheduledEvent[] = [];
+  private _context: MockAudioContext | null = null;
   defaultValue: number = 0;
   minValue: number = -3.4028235e38;
   maxValue: number = 3.4028235e38;
 
-  setValueAtTime(value: number, _time: number): MockAudioParam {
-    this.value = value;
+  /**
+   * Set the context reference for time-aware processing
+   */
+  setContext(context: MockAudioContext): void {
+    this._context = context;
+    context.registerParam(this);
+  }
+
+  get value(): number {
+    return this._value;
+  }
+
+  set value(v: number) {
+    this._value = v;
+  }
+
+  setValueAtTime(value: number, time: number): MockAudioParam {
+    this._scheduledEvents.push({ type: 'setValueAtTime', value, time });
+    this._scheduledEvents.sort((a, b) => a.time - b.time);
+    // Process immediately if time is in the past or now
+    if (this._context && time <= this._context.currentTime) {
+      this._value = value;
+    }
     return this;
   }
 
-  linearRampToValueAtTime(value: number, _time: number): MockAudioParam {
-    this.value = value;
+  linearRampToValueAtTime(value: number, time: number): MockAudioParam {
+    this._scheduledEvents.push({ type: 'linearRampToValueAtTime', value, time });
+    this._scheduledEvents.sort((a, b) => a.time - b.time);
+    // Immediately set value if time is in the past or now
+    if (this._context && time <= this._context.currentTime) {
+      this._value = value;
+    }
     return this;
   }
 
-  exponentialRampToValueAtTime(value: number, _time: number): MockAudioParam {
-    this.value = value;
+  exponentialRampToValueAtTime(value: number, time: number): MockAudioParam {
+    this._scheduledEvents.push({ type: 'exponentialRampToValueAtTime', value, time });
+    this._scheduledEvents.sort((a, b) => a.time - b.time);
+    // Immediately set value if time is in the past or now
+    if (this._context && time <= this._context.currentTime) {
+      this._value = value;
+    }
     return this;
   }
 
-  setTargetAtTime(target: number, _startTime: number, _timeConstant: number): MockAudioParam {
-    this.value = target;
+  setTargetAtTime(target: number, startTime: number, timeConstant: number): MockAudioParam {
+    this._scheduledEvents.push({
+      type: 'setTargetAtTime',
+      value: target,
+      time: startTime,
+      timeConstant
+    });
+    this._scheduledEvents.sort((a, b) => a.time - b.time);
     return this;
   }
 
-  cancelScheduledValues(_startTime: number): MockAudioParam {
+  cancelScheduledValues(startTime: number): MockAudioParam {
+    this._scheduledEvents = this._scheduledEvents.filter(e => e.time < startTime);
     return this;
+  }
+
+  /**
+   * Process scheduled events up to the given time
+   * Called by MockAudioContext.advanceTime()
+   */
+  processScheduledEventsUntil(time: number): void {
+    while (this._scheduledEvents.length > 0 && this._scheduledEvents[0].time <= time) {
+      const event = this._scheduledEvents.shift()!;
+      this._value = event.value;
+    }
+  }
+
+  /**
+   * Get all pending scheduled events (for testing)
+   */
+  getScheduledEvents(): ScheduledEvent[] {
+    return [...this._scheduledEvents];
   }
 }
 
@@ -58,6 +126,7 @@ export class MockGainNode extends MockAudioNode {
   constructor(context: MockAudioContext) {
     super(context);
     this.gain.value = 1;
+    this.gain.setContext(context);
   }
 }
 
@@ -71,6 +140,8 @@ export class MockOscillatorNode extends MockAudioNode {
   constructor(context: MockAudioContext) {
     super(context);
     this.frequency.value = 440;
+    this.frequency.setContext(context);
+    this.detune.setContext(context);
   }
 
   start(_when?: number): void {
@@ -97,6 +168,7 @@ export class MockAudioBufferSourceNode extends MockAudioNode {
   constructor(context: MockAudioContext) {
     super(context);
     this.playbackRate.value = 1;
+    this.playbackRate.setContext(context);
   }
 
   start(_when?: number): void {
@@ -155,6 +227,7 @@ export class MockAudioContext {
   state: AudioContextState = 'running';
   destination: MockAudioNode;
   private eventListeners: Map<string, Function[]> = new Map();
+  private registeredParams: Set<MockAudioParam> = new Set();
 
   constructor(options?: { sampleRate?: number; latencyHint?: string }) {
     if (options?.sampleRate) {
@@ -226,9 +299,22 @@ export class MockAudioContext {
     }
   }
 
-  // Advance time for testing
+  /**
+   * Register an AudioParam for time-aware processing
+   */
+  registerParam(param: MockAudioParam): void {
+    this.registeredParams.add(param);
+  }
+
+  /**
+   * Advance time for testing and process scheduled param automation
+   */
   advanceTime(seconds: number): void {
     this.currentTime += seconds;
+    // Process all registered params' scheduled events
+    for (const param of this.registeredParams) {
+      param.processScheduledEventsUntil(this.currentTime);
+    }
   }
 }
 
