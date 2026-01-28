@@ -54,7 +54,6 @@ jobs:
 
       - name: Run linter
         run: npm run lint
-        continue-on-error: true  # Lint not fully configured yet
 
   coverage:
     runs-on: ubuntu-latest
@@ -76,7 +75,7 @@ jobs:
         run: npm run test:coverage
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage/coverage-final.json
+          files: ./coverage/coverage-final.json
           fail_ci_if_error: false
