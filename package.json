@@ -45,16 +45,16 @@
     "game-audio",
     "tracker"
   ],
-  "author": "",
+  "author": "Kevin Krueger",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/username/retro-audio-engine.git"
+    "url": "git+https://github.com/kevtronkrueger/retro-audio.git"
   },
   "bugs": {
-    "url": "https://github.com/username/retro-audio-engine/issues"
+    "url": "https://github.com/kevtronkrueger/retro-audio/issues"
   },
-  "homepage": "https://github.com/username/retro-audio-engine#readme",
+  "homepage": "https://github.com/kevtronkrueger/retro-audio#readme",
   "engines": {
     "node": ">=18.0.0"
   },
