@@ -34,6 +34,10 @@ coverage/
 *.temp
 .cache/
 
+# Claude Code local files
+CLAUDE.local.md
+.claude/scratchpad/
+
 # Lock files (optional - remove if you want to commit them)
 # package-lock.json
 # yarn.lock
