@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Audio Engine - Pattern Player</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    h1 { color: #00d4ff; }
+    button {
+      background: #00d4ff;
+      color: #1a1a2e;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 4px;
+    }
+    button:hover { background: #00a8cc; }
+    button:disabled { background: #666; cursor: not-allowed; }
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: 80px repeat(16, 1fr);
+      gap: 2px;
+      margin: 20px 0;
+      background: #16213e;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .channel-label {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      font-size: 12px;
+      color: #888;
+    }
+    .step {
+      height: 30px;
+      background: #0f3460;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #666;
+    }
+    .step.active { background: #00d4ff; color: #1a1a2e; }
+    .step.has-note { background: #e94560; }
+    .step.has-note.active { background: #ff6b6b; }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 20px 0;
+    }
+    .bpm-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .bpm-control input {
+      width: 80px;
+      padding: 8px;
+      background: #16213e;
+      border: 1px solid #333;
+      color: #eee;
+      border-radius: 4px;
+    }
+    .channel-controls {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .channel-control {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .channel-control label { color: #888; font-size: 14px; }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Retro Audio Engine - Pattern Player</h1>
+
+  <button id="initBtn">Click to Start</button>
+
+  <div id="app" style="display: none;">
+    <div class="controls">
+      <button id="playBtn">Play</button>
+      <button id="stopBtn">Stop</button>
+      <div class="bpm-control">
+        <label>BPM:</label>
+        <input type="number" id="bpm" value="120" min="60" max="240">
+      </div>
+      <label>
+        <input type="checkbox" id="loop" checked> Loop
+      </label>
+    </div>
+
+    <div class="channel-controls">
+      <div class="channel-control">
+        <input type="checkbox" id="mute-pulse1">
+        <label>Mute Pulse 1</label>
+      </div>
+      <div class="channel-control">
+        <input type="checkbox" id="mute-pulse2">
+        <label>Mute Pulse 2</label>
+      </div>
+      <div class="channel-control">
+        <input type="checkbox" id="mute-wave">
+        <label>Mute Wave</label>
+      </div>
+      <div class="channel-control">
+        <input type="checkbox" id="mute-noise">
+        <label>Mute Noise</label>
+      </div>
+    </div>
+
+    <div class="pattern-grid" id="grid"></div>
+  </div>
+
+  <script type="module">
+    import { RetroAudio } from '../dist/index.js';
+
+    const audio = new RetroAudio();
+    let player = null;
+    let currentStep = -1;
+
+    // Instruments
+    const instruments = [
+      {
+        id: 'lead',
+        name: 'Lead',
+        channel: 'pulse1',
+        waveform: { type: 'pulse', duty: 0.25 },
+        envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.1 },
+        volume: 0.6
+      },
+      {
+        id: 'harmony',
+        name: 'Harmony',
+        channel: 'pulse2',
+        waveform: { type: 'pulse', duty: 0.5 },
+        envelope: { attack: 0.01, decay: 0.15, sustain: 0.4, release: 0.1 },
+        volume: 0.4
+      },
+      {
+        id: 'bass',
+        name: 'Bass',
+        channel: 'wave',
+        waveform: { type: 'triangle' },
+        envelope: { attack: 0.01, decay: 0.2, sustain: 0.6, release: 0.15 },
+        volume: 0.7
+      },
+      {
+        id: 'drums',
+        name: 'Drums',
+        channel: 'noise',
+        waveform: { type: 'noise', mode: 'short' },
+        envelope: { attack: 0, decay: 0.1, sustain: 0, release: 0 },
+        volume: 0.5
+      }
+    ];
+
+    // Pattern - simple melody
+    const pattern = {
+      id: 'demo',
+      name: 'Demo Pattern',
+      steps: 16,
+      stepsPerBeat: 4,
+      channels: {
+        pulse1: [
+          { step: 0, note: 'C5', instrumentId: 'lead' },
+          { step: 4, note: 'E5', instrumentId: 'lead' },
+          { step: 8, note: 'G5', instrumentId: 'lead' },
+          { step: 12, note: 'E5', instrumentId: 'lead' },
+        ],
+        pulse2: [
+          { step: 0, note: 'E4', instrumentId: 'harmony' },
+          { step: 4, note: 'G4', instrumentId: 'harmony' },
+          { step: 8, note: 'B4', instrumentId: 'harmony' },
+          { step: 12, note: 'G4', instrumentId: 'harmony' },
+        ],
+        wave: [
+          { step: 0, note: 'C3', instrumentId: 'bass', duration: 4 },
+          { step: 4, note: 'C3', instrumentId: 'bass', duration: 4 },
+          { step: 8, note: 'G2', instrumentId: 'bass', duration: 4 },
+          { step: 12, note: 'G2', instrumentId: 'bass', duration: 4 },
+        ],
+        noise: [
+          { step: 0, note: 'C4', instrumentId: 'drums' },
+          { step: 4, note: 'C4', instrumentId: 'drums' },
+          { step: 8, note: 'C4', instrumentId: 'drums' },
+          { step: 12, note: 'C4', instrumentId: 'drums' },
+        ]
+      }
+    };
+
+    // Build grid UI
+    function buildGrid() {
+      const grid = document.getElementById('grid');
+      const channels = ['pulse1', 'pulse2', 'wave', 'noise'];
+
+      channels.forEach(ch => {
+        // Channel label
+        const label = document.createElement('div');
+        label.className = 'channel-label';
+        label.textContent = ch;
+        grid.appendChild(label);
+
+        // Steps
+        for (let i = 0; i < 16; i++) {
+          const step = document.createElement('div');
+          step.className = 'step';
+          step.dataset.channel = ch;
+          step.dataset.step = i;
+
+          // Check if there's a note at this step
+          const event = pattern.channels[ch].find(e => e.step === i);
+          if (event) {
+            step.classList.add('has-note');
+            step.textContent = event.note;
+          }
+
+          grid.appendChild(step);
+        }
+      });
+    }
+
+    function updateGrid(step) {
+      document.querySelectorAll('.step').forEach(el => {
+        el.classList.remove('active');
+        if (parseInt(el.dataset.step) === step) {
+          el.classList.add('active');
+        }
+      });
+    }
+
+    // Initialize
+    document.getElementById('initBtn').addEventListener('click', async () => {
+      await audio.init();
+      audio.loadInstruments(instruments);
+      buildGrid();
+      document.getElementById('initBtn').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    });
+
+    // Play
+    document.getElementById('playBtn').addEventListener('click', () => {
+      if (player) {
+        player.play();
+        return;
+      }
+
+      const bpm = parseInt(document.getElementById('bpm').value);
+      const loop = document.getElementById('loop').checked;
+
+      player = audio.playPattern(pattern, { bpm, loop });
+      player.onStep = (step) => {
+        currentStep = step;
+        updateGrid(step);
+      };
+      player.onEnd = () => {
+        if (!loop) {
+          currentStep = -1;
+          updateGrid(-1);
+        }
+      };
+    });
+
+    // Stop
+    document.getElementById('stopBtn').addEventListener('click', () => {
+      if (player) {
+        player.stop();
+        player = null;
+        currentStep = -1;
+        updateGrid(-1);
+      }
+    });
+
+    // BPM change
+    document.getElementById('bpm').addEventListener('change', (e) => {
+      if (player) {
+        player.bpm = parseInt(e.target.value);
+      }
+    });
+
+    // Loop toggle
+    document.getElementById('loop').addEventListener('change', (e) => {
+      if (player) {
+        player.loop = e.target.checked;
+      }
+    });
+
+    // Mute controls
+    ['pulse1', 'pulse2', 'wave', 'noise'].forEach(ch => {
+      document.getElementById(`mute-${ch}`).addEventListener('change', (e) => {
+        if (player) {
+          player.setChannelMute(ch, e.target.checked);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Audio Engine - Basic Usage</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    h1 { color: #00d4ff; }
+    button {
+      background: #00d4ff;
+      color: #1a1a2e;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 8px;
+    }
+    button:hover { background: #00a8cc; }
+    button:disabled { background: #666; cursor: not-allowed; }
+    .status {
+      padding: 12px;
+      background: #16213e;
+      border-radius: 4px;
+      margin: 16px 0;
+    }
+    .controls { margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h1>Retro Audio Engine - Basic Usage</h1>
+
+  <div class="status">
+    <strong>Status:</strong> <span id="status">Not initialized</span>
+  </div>
+
+  <div class="controls">
+    <button id="initBtn">Initialize Audio</button>
+    <button id="beepBtn" disabled>Play Beep</button>
+    <button id="laserBtn" disabled>Play Laser</button>
+    <button id="jumpBtn" disabled>Play Jump</button>
+    <button id="coinBtn" disabled>Play Coin</button>
+  </div>
+
+  <script type="module">
+    import { RetroAudio } from '../dist/index.js';
+
+    const audio = new RetroAudio();
+    const statusEl = document.getElementById('status');
+    const buttons = ['beepBtn', 'laserBtn', 'jumpBtn', 'coinBtn'].map(id =>
+      document.getElementById(id)
+    );
+
+    // Sound effect definitions
+    const sounds = {
+      beep: {
+        version: '1.0',
+        type: 'sfx',
+        name: 'Beep',
+        instrument: {
+          id: 'beep',
+          name: 'Beep',
+          channel: 'pulse1',
+          waveform: { type: 'pulse', duty: 0.5 },
+          envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 },
+          volume: 0.6
+        },
+        note: 'C5',
+        duration: 0.15
+      },
+      laser: {
+        version: '1.0',
+        type: 'sfx',
+        name: 'Laser',
+        instrument: {
+          id: 'laser',
+          name: 'Laser',
+          channel: 'pulse1',
+          waveform: { type: 'pulse', duty: 0.125 },
+          envelope: { attack: 0, decay: 0.3, sustain: 0, release: 0 },
+          pitch: { slide: -24, slideTime: 0.3 },
+          volume: 0.5
+        },
+        note: 'C6',
+        duration: 0.3
+      },
+      jump: {
+        version: '1.0',
+        type: 'sfx',
+        name: 'Jump',
+        instrument: {
+          id: 'jump',
+          name: 'Jump',
+          channel: 'pulse2',
+          waveform: { type: 'pulse', duty: 0.25 },
+          envelope: { attack: 0, decay: 0.15, sustain: 0, release: 0 },
+          pitch: { slide: 12, slideTime: 0.15 },
+          volume: 0.5
+        },
+        note: 'C4',
+        duration: 0.15
+      },
+      coin: {
+        version: '1.0',
+        type: 'sfx',
+        name: 'Coin',
+        instrument: {
+          id: 'coin',
+          name: 'Coin',
+          channel: 'pulse1',
+          waveform: { type: 'pulse', duty: 0.5 },
+          envelope: { attack: 0, decay: 0.05, sustain: 0.3, release: 0.1 },
+          pitch: { arpeggio: [0, 12], arpeggioSpeed: 20 },
+          volume: 0.5
+        },
+        note: 'E6',
+        duration: 0.15
+      }
+    };
+
+    // State change handler
+    audio.onStateChange = (state) => {
+      statusEl.textContent = state;
+      buttons.forEach(btn => btn.disabled = state !== 'running');
+    };
+
+    // Initialize button
+    document.getElementById('initBtn').addEventListener('click', async () => {
+      await audio.init();
+      document.getElementById('initBtn').disabled = true;
+    });
+
+    // Sound buttons
+    document.getElementById('beepBtn').addEventListener('click', () => {
+      audio.playSfx(sounds.beep);
+    });
+
+    document.getElementById('laserBtn').addEventListener('click', () => {
+      audio.playSfx(sounds.laser);
+    });
+
+    document.getElementById('jumpBtn').addEventListener('click', () => {
+      audio.playSfx(sounds.jump);
+    });
+
+    document.getElementById('coinBtn').addEventListener('click', () => {
+      audio.playSfx(sounds.coin);
+    });
+  </script>
+</body>
+</html>

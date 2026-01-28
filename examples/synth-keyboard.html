@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Audio Engine - Synth Keyboard</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    h1 { color: #00d4ff; }
+    .keyboard {
+      display: flex;
+      gap: 4px;
+      margin: 20px 0;
+    }
+    .key {
+      width: 50px;
+      height: 150px;
+      background: white;
+      border: 1px solid #333;
+      border-radius: 0 0 4px 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 10px;
+      color: #333;
+      font-size: 12px;
+      user-select: none;
+    }
+    .key:hover { background: #ddd; }
+    .key.active { background: #00d4ff; }
+    .key.black {
+      background: #333;
+      color: white;
+      width: 35px;
+      height: 100px;
+      margin: 0 -17px;
+      z-index: 1;
+    }
+    .key.black:hover { background: #555; }
+    .key.black.active { background: #0088aa; }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #888;
+    }
+    .control-group input, .control-group select {
+      width: 100%;
+      padding: 8px;
+      background: #16213e;
+      border: 1px solid #333;
+      color: #eee;
+      border-radius: 4px;
+    }
+    button {
+      background: #00d4ff;
+      color: #1a1a2e;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled { background: #666; cursor: not-allowed; }
+    .hint { color: #666; font-size: 14px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Retro Audio Engine - Synth Keyboard</h1>
+
+  <button id="initBtn">Click to Start</button>
+
+  <div id="app" style="display: none;">
+    <div class="keyboard" id="keyboard"></div>
+    <p class="hint">Use keys A-K for white keys, W-U for black keys</p>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>Waveform</label>
+        <select id="waveform">
+          <option value="0.5">Square (50%)</option>
+          <option value="0.25">Pulse (25%)</option>
+          <option value="0.125">Pulse (12.5%)</option>
+          <option value="0.75">Pulse (75%)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Attack: <span id="attackVal">0.01</span>s</label>
+        <input type="range" id="attack" min="0" max="1" step="0.01" value="0.01">
+      </div>
+      <div class="control-group">
+        <label>Release: <span id="releaseVal">0.2</span>s</label>
+        <input type="range" id="release" min="0" max="1" step="0.01" value="0.2">
+      </div>
+      <div class="control-group">
+        <label>Vibrato Depth: <span id="vibratoVal">0</span></label>
+        <input type="range" id="vibrato" min="0" max="1" step="0.1" value="0">
+      </div>
+      <div class="control-group">
+        <label>Vibrato Speed: <span id="vibratoSpeedVal">5</span>Hz</label>
+        <input type="range" id="vibratoSpeed" min="1" max="15" step="1" value="5">
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { RetroAudio } from '../dist/index.js';
+
+    const audio = new RetroAudio();
+    let synth = null;
+    let currentNote = null;
+
+    const notes = [
+      { note: 'C4', key: 'a', black: false },
+      { note: 'C#4', key: 'w', black: true },
+      { note: 'D4', key: 's', black: false },
+      { note: 'D#4', key: 'e', black: true },
+      { note: 'E4', key: 'd', black: false },
+      { note: 'F4', key: 'f', black: false },
+      { note: 'F#4', key: 't', black: true },
+      { note: 'G4', key: 'g', black: false },
+      { note: 'G#4', key: 'y', black: true },
+      { note: 'A4', key: 'h', black: false },
+      { note: 'A#4', key: 'u', black: true },
+      { note: 'B4', key: 'j', black: false },
+      { note: 'C5', key: 'k', black: false },
+    ];
+
+    const keyMap = {};
+    notes.forEach(n => keyMap[n.key] = n.note);
+
+    function getInstrument() {
+      const duty = parseFloat(document.getElementById('waveform').value);
+      const attack = parseFloat(document.getElementById('attack').value);
+      const release = parseFloat(document.getElementById('release').value);
+      const vibrato = parseFloat(document.getElementById('vibrato').value);
+      const vibratoSpeed = parseFloat(document.getElementById('vibratoSpeed').value);
+
+      return {
+        id: 'keyboard',
+        name: 'Keyboard',
+        channel: 'pulse1',
+        waveform: { type: 'pulse', duty },
+        envelope: { attack, decay: 0.1, sustain: 0.7, release },
+        pitch: vibrato > 0 ? { vibratoDepth: vibrato, vibratoSpeed } : undefined,
+        volume: 0.6
+      };
+    }
+
+    function playNote(note) {
+      if (currentNote === note) return;
+      if (synth) synth.dispose();
+
+      synth = audio.createSynth(getInstrument());
+      synth.noteOn(note);
+      currentNote = note;
+
+      // Highlight key
+      document.querySelectorAll('.key').forEach(k => k.classList.remove('active'));
+      const keyEl = document.querySelector(`[data-note="${note}"]`);
+      if (keyEl) keyEl.classList.add('active');
+    }
+
+    function stopNote() {
+      if (synth) {
+        synth.noteOff();
+        synth.dispose();
+        synth = null;
+      }
+      currentNote = null;
+      document.querySelectorAll('.key').forEach(k => k.classList.remove('active'));
+    }
+
+    // Build keyboard UI
+    const keyboard = document.getElementById('keyboard');
+    notes.forEach(n => {
+      const key = document.createElement('div');
+      key.className = `key ${n.black ? 'black' : ''}`;
+      key.dataset.note = n.note;
+      key.textContent = n.key.toUpperCase();
+      key.addEventListener('mousedown', () => playNote(n.note));
+      key.addEventListener('mouseup', stopNote);
+      key.addEventListener('mouseleave', stopNote);
+      keyboard.appendChild(key);
+    });
+
+    // Keyboard events
+    document.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      const note = keyMap[e.key.toLowerCase()];
+      if (note) playNote(note);
+    });
+
+    document.addEventListener('keyup', (e) => {
+      const note = keyMap[e.key.toLowerCase()];
+      if (note && currentNote === note) stopNote();
+    });
+
+    // Control value displays
+    ['attack', 'release', 'vibrato', 'vibratoSpeed'].forEach(id => {
+      const input = document.getElementById(id);
+      const display = document.getElementById(id + 'Val');
+      input.addEventListener('input', () => {
+        display.textContent = input.value;
+      });
+    });
+
+    // Initialize
+    document.getElementById('initBtn').addEventListener('click', async () => {
+      await audio.init();
+      document.getElementById('initBtn').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    });
+  </script>
+</body>
+</html>

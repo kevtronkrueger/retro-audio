@@ -1,0 +1,72 @@
+{
+  "name": "retro-audio-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Lightweight, embeddable Web Audio synthesizer engine that emulates 8-bit sound hardware (Game Boy DMG style)",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run typecheck && npm run test:run && npm run build"
+  },
+  "keywords": [
+    "audio",
+    "synthesizer",
+    "chiptune",
+    "8-bit",
+    "gameboy",
+    "web-audio",
+    "retro",
+    "sound",
+    "music",
+    "sfx",
+    "game-audio",
+    "tracker"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/username/retro-audio-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/username/retro-audio-engine/issues"
+  },
+  "homepage": "https://github.com/username/retro-audio-engine#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.0.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
